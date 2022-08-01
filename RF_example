@@ -1,0 +1,127 @@
+# Example of 1 random forest model (trained for one ecozone and one disturbance driver over reported only disturbance data)
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#Libraries
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+library(randomForest)
+library(mlr)
+library(pastecs)
+library(Hmisc)
+library(lattice)
+
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# TRAIN A RANDOM FOREST MODEL FOR EACH ECOZONE ON THE TRAINING DATABASE OF              -WIND DAMAGE CENTRAL PANNONIC-
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#"Central_Pannonic" is a data frame object containing a column with the years and 5 columns with reporting the amount of disturbance impact (m3)
+# for each disturbance drivers
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#Filter the entire df by wind
+Central_Pannonic %>% 
+  subset(., disturbance_type == "Wind_damage") %>% 
+  na.omit()%>% 
+  mutate(damaged_wood_volume = log(damaged_wood_volume)) %>% 
+  mutate(damaged_wood_volume = if_else(damaged_wood_volume == "-Inf", 0, damaged_wood_volume))-> Wind_Central_Pannonic_4_RF
+
+#reorder randomly the dataset
+rows<- sample(nrow(Wind_Central_Pannonic_4_RF))
+Wind_Central_Pannonic_4_RF <- Wind_Central_Pannonic_4_RF[rows,] 
+
+# Fit the random forest model for regression
+##making th example reproducible
+set.seed(753)
+
+##fit the random forest model
+wind.CENTRAL_PANN.rf.model <- randomForest(formula = damaged_wood_volume ~ .,
+                                          data = Wind_Central_Pannonic_4_RF)
+
+
+#display fitted model
+wind.CENTRAL_PANN.rf.model
+
+#find number of trees that produce lowest test MSE
+which.min(wind.CENTRAL_PANN.rf.model$mse)
+
+#find RMSE of best model
+sqrt(wind.CENTRAL_PANN.rf.model$mse[which.min(wind.CENTRAL_PANN.rf.model$mse)]) #We can think of this as the average difference between the predicted value for wind damage and the actual observed value
+
+#plot the test MSE by number of trees
+plot(wind.CENTRAL_PANN.rf.model)
+
+#produce variable importance plot
+varImpPlot(wind.CENTRAL_PANN.rf.model) 
+
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+# Tune the RF model
+
+model_tuned <- tuneRF(
+  x=Wind_Central_Pannonic_4_RF[,-47], #define predictor variables
+  y=Wind_Central_Pannonic_4_RF$damaged_wood_volume, #define response variable
+  ntreeTry=500,
+  mtryStart=4, 
+  stepFactor=0.5,
+  improve=0.01,
+  trace=FALSE #don't show real-time progress
+)
+
+# ntreeTry: The number of trees to build.
+# mtryStart: The starting number of predictor variables to consider at each split.
+# stepFactor: The factor to increase by until the out-of-bag estimated error stops improving by a certain amount.
+# improve: The amount that the out-of-bag error needs to improve by to keep increasing the step factor.
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+#Recalibrate the model
+
+##fit the random forest model
+Wind_CENTRAL_PANN_4_RF.2 <- randomForest(formula = damaged_wood_volume ~ .,
+                                        data = Wind_Central_Pannonic_4_RF,
+                                        mtry = 32,
+                                        ntree = 500)
+
+#display fitted model
+Wind_CENTRAL_PANN_4_RF.2
+
+#find number of trees that produce lowest test MSE
+which.min(Wind_CENTRAL_PANN_4_RF.2$mse)
+
+#find RMSE of best model
+sqrt(Wind_CENTRAL_PANN_4_RF.2$mse[which.min(Wind_CENTRAL_PANN_4_RF.2$mse)]) #We can think of this as the average difference between the predicted value for wind damage and the actual observed value
+
+#plot the test MSE by number of trees
+plot(Wind_CENTRAL_PANN_4_RF.2)
+
+#produce variable importance plot
+varImpPlot(Wind_CENTRAL_PANN_4_RF.2) 
+
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+#MAKE PREDICTIONS
+#build complete timeseries for predicting it
+Central_Pannonic %>% 
+  subset(., disturbance_type == "Wind_damage")->Wind_CENTRAL_PANN_tot
+
+#use fitted bagged model to predict wind damage values 
+predict(Wind_CENTRAL_PANN_4_RF.2, Wind_CENTRAL_PANN_tot[-47]) %>%
+  as.data.frame()  -> CENTRAL_PANN_4_RF_predicted
+
+#prediction post editing
+##name column
+colnames(CENTRAL_PANN_4_RF_predicted)<- c("damaged_wood_pred")
+
+#back transform
+exp(CENTRAL_PANN_4_RF_predicted$damaged_wood_pred)->CENTRAL_PANN_4_RF_predicted$damaged_wood_pred
+
+##create comparison df
+Wind_CENTRAL_PANN_tot %>% 
+  cbind(CENTRAL_PANN_4_RF_predicted$damaged_wood_pred)  -> wind_CENTRAL_PANN_comparison
+
+wind_CENTRAL_PANN_comparison %>% 
+  select(Year, country,  damaged_wood_volume, `CENTRAL_PANN_4_RF_predicted$damaged_wood_pred`)->wind_CENTRAL_PANN_comparison
+
+#rename vars
+colnames(wind_CENTRAL_PANN_comparison)<- c("Year","country", "Wind_m3", "Wind_m3_pred")
+
+#ggplot comparison
+wind_CENTRAL_PANN_comparison %>% 
+  gather(., key = "data_type", value = "value", -Year, -country ) %>% 
+  ggplot(aes(x = Year, y = value, fill = data_type)) +
+  geom_col(position = position_dodge())+
+  facet_wrap(~country, scales = "free")
