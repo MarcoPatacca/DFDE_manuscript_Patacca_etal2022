@@ -1,0 +1,113 @@
+#Figure 6 - Decadal average of countries' total damage weighted by forest area (Standardized disturbance index, m3/ha/yr) plotted in the maps. 
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#Libraries
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#"disturbance_df" is a data frame object containing the yearly value of total disturbances for each country.
+#"Area_df" is a data frame object containing the yearly average forest area for each country.
+
+#Calculate total damage and add together disturbances and forest area in the same df
+disturbance_df %>% 
+  group_by(Year, country) %>% 
+  mutate(total_damage = sum(Wind, Bark_beetles, Biotic, Abiotic, Fire_m3, na.rm = T)) %>% 
+  left_join(Area_df, by = c("Year", "country")) -> weighted_damage_df
+
+#add comparison periods, Weight the total damage over the area and calculate the mean for the two comparison periods
+weighted_damage_df %>% 
+  select(Year, country, total_damage, Area_1000ha) %>% 
+  mutate(comparison_period = case_when(Year <= 1959 ~ "1950s",
+                                       Year <= 1969 ~ "1960s",
+                                       Year <= 1979 ~ "1970s",
+                                       Year <= 1989 ~ "1980s",
+                                       Year <= 1999 ~ "1990s",
+                                       Year <= 2009 ~ "2000s",
+                                       Year <= 2019 ~ "2010s")) %>% 
+  mutate(ecozone = case_when( country == "Austria" ~ "Alpine",
+                              country == "Albania" ~ "Central Mediterranean",
+                              country == "Belgium" ~ "Sub Atlantic",
+                              country == "Bosnia & Herzegovina" ~ "Central Mediterranean",
+                              country == "Bulgaria" ~ "East Mediterranean",
+                              country == "Croatia" ~ "Central Mediterranean",
+                              country == "Cyprus" ~ "East Mediterranean",
+                              country == "Czechia" ~ "Central Pannonic",
+                              country == "Denmark" ~ "Sub Atlantic",
+                              country == "Estonia" ~ "Northern Baltic",
+                              country == "Finland" ~ "Northern Baltic",
+                              country == "Germany" ~ "Sub Atlantic",
+                              country == "France" ~ "Sub Atlantic",
+                              country == "Greece" ~ "East Mediterranean",
+                              country == "Hungary" ~ "Central Pannonic",
+                              country == "Ireland" ~ "Atlantic",
+                              country == "Italy" ~ "Central Mediterranean",
+                              country == "Latvia" ~ "Northern Baltic",
+                              country == "Lithuania" ~ "Northenr Baltic",
+                              country == "Luxembourg" ~ "Sub Atlantic",
+                              country == "Netherlands" ~ "Sub Atlantic",
+                              country == "North Macedonia" ~ "Central Mediterranean",
+                              country == "Norway" ~ "Northern Baltic",
+                              country == "Poland" ~ "Central Pannonic",
+                              country == "Portugal" ~ "West Mediterranean",
+                              country == "Romania" ~ "Central Pannonic",
+                              country == "Serbia" ~ "Central Mediterranean",
+                              country == "Slovakia" ~ "Central Pannonic",
+                              country == "Slovenia" ~ "Central Mediterranean",
+                              country == "Spain" ~ "West Mediterranean",
+                              country == "Sweden" ~ "Northern Baltic",
+                              country == "Switzerland" ~ "Alpine",
+                              country == "Turkey" ~ "West Mediterranean",
+                              country == "United Kingdom" ~ "Atlantic")) %>% 
+  select(-Year) %>% 
+  mutate(Damage_divided_area = (total_damage)/(Area_1000ha*1000)) %>% 
+  group_by(comparison_period, ecozone, country) %>%
+  summarise(across(where(is.numeric), mean, na.rm = TRUE))->weighted_damage_df
+
+#select only useful vars
+weighted_damage_df %>% 
+  select(comparison_period, country, ecozone, Damage_divided_area)->weighted_damage_df
+
+# make MAPS       
+# EU Contries
+eu.countries <- c(
+  "Portugal", "Spain", "France", "Switzerland", "Germany",
+  "Austria", "Belgium","UK", "Netherlands",
+  "Denmark", "Poland", "Italy", 
+  "Croatia", "Slovenia", "Hungary", "Slovakia",
+  "Czech Republic", "Finland", "Sweden", "Norway", "Greece", "Serbia", "Bosnia and Herzegovina", "Ireland",
+  "Estonia", "Latvia", "Lithuania", "Albania", "Romania" ,  "Bulgaria", "Luxembourg", 
+  "North Macedonia", "Turkey"
+)
+
+# Retrievethe map data
+eu.maps <- map_data("world", region = eu.countries)
+
+# Compute the centroid as the mean longitude and lattitude
+# Used as label coordinate for country's names
+region.lab.data <- eu.maps %>%
+  group_by(region) %>%
+  summarise(long = mean(long), lat = mean(lat))
+
+# fix names
+weighted_damage_df %>% 
+  mutate( country =gsub("United Kingdom", replacement = "UK", country) ,
+          country =gsub("Czechia", replacement = "Czech Republic", country) ,
+          country =gsub("Bosnia & Herzegovina", replacement = "Bosnia and Herzegovina", country))-> weighted_damage_df
+
+#  -------MAPS x DISTURBANCE------- 
+eu.maps %>% 
+  left_join(weighted_damage_df, by = c("region" = "country"))->eu.maps
+
+
+#plot
+ggplot(eu.maps, aes(x = long, y = lat)) +
+  geom_polygon(aes( group = group, fill =Damage_divided_area))+
+  scale_fill_distiller(palette = "YlOrRd", direction = 2, na.value = NA)+
+  theme_void()+
+  theme(text = element_text(size = 15))+
+  facet_wrap(~comparison_period)+
+  geom_path(color = "black", fill = "white", size = .1, data = eu.maps, aes(x = long, y = lat, group = group))+
+  labs( fill = "Standardized disturbance index
+(m3/ha/yr)")+
+  theme(legend.position = c(0.5,0.2))
