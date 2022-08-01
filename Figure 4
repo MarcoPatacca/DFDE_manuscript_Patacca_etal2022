@@ -1,0 +1,42 @@
+Figure 4 - Total Eu damage divided by disturbance driver plotted in different plots with decadal average plotted over the same plots of the drivers.
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#Libraries
+library(tidiverse)
+library(ggplot2)
+
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#EU_df is a data frame object containing 6 columns. The column "Year" contains the years of the time-series (1950-2019). The other columns contain the sum of the damage caused 
+#by disturbances in the 34 countries included in the study. Each column represent a different disturbance driver.
+
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#compute decadal averages
+#Decadal average
+EU_df %>% 
+  select(Year, variable, value) %>% 
+  mutate(decade = case_when(Year <= 1959 ~ "1955",
+                            Year <= 1969 ~ "1965",
+                            Year <= 1979 ~ "1975",
+                            Year <= 1989 ~ "1985",
+                            Year <= 1999 ~ "1995",
+                            Year <= 2009 ~ "2005",
+                            Year <= 2019 ~ "2015")) %>% 
+  group_by(decade, variable) %>% 
+  mutate(decade_average = mean(value)) ->decade_mean_df
+
+decade_mean_df$decade %>% as.numeric()->decade_mean_df$decade
+
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#plot disturbance causes in different panels
+EU_df %>% 
+  mutate(value = value/1000000) %>% 
+  ggplot() +
+  geom_area(aes( x = Year, y = value, fill =  variable), alpha = 0.8, color = 1,lwd = 0.5,linetype = 1)+
+  geom_col(data = decade_mean_df,aes(x = decade, y = decade_average), alpha = 0, color = 1,lwd = 0.5,linetype = 1)+
+  geom_smooth(aes( x = Year, y = value), method = "lm", se = F )+
+  scale_fill_viridis_d(option = "D") +
+  facet_wrap(~variable, scales = "free")+
+  labs( y = "Damage (M m3/year)")+
+  theme_classic()+
+  theme(text = element_text(size = 20))+
+  theme(legend.position = "none",
+             strip.text = element_text(size = 20, face = "bold"))
