@@ -1,0 +1,28 @@
+#Figure 3 - Total reported damage at EU scale (country_list = 34 countries), stacked by cause
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#Libraries
+library(tidyverse)
+library(ggplot2)
+
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#plot totals stack by cause in the same graph
+#EU_df is a data frame object containing 6 columns. The column "Year" contains the years of the time-series (1950-2019). The other columns contain the sum of the damage caused 
+#by disturbances in the 34 countries included in the study. Each column represent a different disturbance driver.
+#plot
+EU_df %>% 
+  select(Year, `Wind`, `Bark Beetles`, `Other abiotic`,`Other biotic`, `Fire`) %>% 
+  gather(., `Disturbance agent`, damage, -Year ) %>%
+  mutate(damage = damage/1000000) %>% 
+  ggplot(., aes(x = Year, y = damage, fill = `Disturbance agent`))+
+  geom_area(alpha = 0.8,
+    color = 1,    # Line color
+            lwd = 0.5,    # Line width
+            linetype = 1)+
+  scale_fill_viridis_d(option = "D")+
+  theme_classic()+
+  theme(legend.text =  element_text(size = 30),
+        legend.title =  element_text(size = 30, face = "bold"),
+        legend.position = c(0.1, 0.85))+
+  labs(y="Damage (M m3/year)")+
+  scale_y_continuous(breaks = seq(0, 250, 50))+
+  theme(text = element_text(size = 30)) 
