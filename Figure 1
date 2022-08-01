@@ -1,9 +1,11 @@
+#Figure 1 - Make map for showing ecozones 
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #Libraries
 library(ggmap)
 library(tidyverse)
 library(ggplot2)
 
-#Figure 2 - Make map for showing ecozones 
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #country_list is a data frame object containing an atomic vector with the countries included in the study.
 #add ecozones
 country_list %>% 
