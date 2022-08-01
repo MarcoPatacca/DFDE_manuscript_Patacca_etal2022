@@ -1,0 +1,85 @@
+#Libraries
+library(ggmap)
+library(tidyverse)
+library(ggplot2)
+
+#Figure 2 - Make map for showing ecozones 
+#country_list is a data frame object containing an atomic vector with the countries included in the study.
+#add ecozones
+country_list %>% 
+  mutate(`Ecological zone` = case_when( country == "Austria" ~ "Alpine",
+                              country == "Albania" ~ "Central Mediterranean",
+                              country == "Belgium" ~ "Sub Atlantic",
+                              country == "Bosnia and Herzegovina" ~ "Central Mediterranean",
+                              country == "Bulgaria" ~ "East Mediterranean",
+                              country == "Croatia" ~ "Central Mediterranean",
+                              country == "Cyprus" ~ "East Mediterranean",
+                              country == "Czech Republic" ~ "Central Pannonic",
+                              country == "Denmark" ~ "Sub Atlantic",
+                              country == "Estonia" ~ "Northern/Baltic",
+                              country == "Finland" ~ "Northern/Baltic",
+                              country == "Germany" ~ "Sub Atlantic",
+                              country == "France" ~ "Sub Atlantic",
+                              country == "Greece" ~ "East Mediterranean",
+                              country == "Hungary" ~ "Central Pannonic",
+                              country == "Ireland" ~ "Atlantic",
+                              country == "Italy" ~ "Central Mediterranean",
+                              country == "Latvia" ~ "Northern/Baltic",
+                              country == "Lithuania" ~ "Northern/Baltic",
+                              country == "Luxembourg" ~ "Sub Atlantic",
+                              country == "Netherlands" ~ "Sub Atlantic",
+                              country == "North Macedonia" ~ "Central Mediterranean",
+                              country == "Norway" ~ "Northern/Baltic",
+                              country == "Poland" ~ "Central Pannonic",
+                              country == "Portugal" ~ "West Mediterranean",
+                              country == "Romania" ~ "Central Pannonic",
+                              country == "Serbia" ~ "Central Mediterranean",
+                              country == "Slovakia" ~ "Central Pannonic",
+                              country == "Slovenia" ~ "Central Mediterranean",
+                              country == "Spain" ~ "West Mediterranean",
+                              country == "Sweden" ~ "Northern/Baltic",
+                              country == "Switzerland" ~ "Alpine",
+                              country == "Turkey" ~ "East Mediterranean",
+                              country == "UK" ~ "Atlantic"))-> ecozone_df
+
+
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#create map with terrain background underneath 
+# Define x and y limits of the plot
+bbox <- c(left = -12, bottom = 34, right = 45, top = 72)
+
+# Get elevation map
+elevation_map <- get_stamenmap(bbox, maptype = "terrain-background", zoom = 7) # You can change the zoom for more or less details
+
+# Get country contours 
+my_world_map <- map_data('world')
+
+# To check the country names (in case necessary)
+as.character(unique(unlist(my_world_map$region))) 
+
+my_world_map1 <- my_world_map[my_world_map$region %in% c(  "Portugal", "Spain", "France", "Switzerland", "Germany",
+                                                           "Austria", "Belgium", "UK", "Netherlands",
+                                                           "Denmark", "Poland", "Italy", 
+                                                           "Croatia", "Slovenia", "Hungary", "Slovakia",
+                                                           "Czech Republic", "Finland", "Sweden", "Norway", "Greece", 
+                                                           "Serbia", "Bosnia and Herzegovina", "Ireland",
+                                                           "Estonia", "Latvia", "Lithuania", "Albania", "Romania" ,  
+                                                           "Bulgaria", "Luxembourg", "North Macedonia", "Turkey"),]
+
+#join ecozones to maps df
+my_world_map1 %>% 
+  left_join(ecozone_df, by = c("region"= "country"))->my_world_map1
+
+# Plot 
+zz <- ggmap(elevation_map, extent = "device") +
+  scale_fill_gradientn(colours = terrain.colors(100)) +
+  geom_polygon(data = my_world_map1, 
+               aes(x = long, y = lat, group = group, fill = `Ecological zone`) ,alpha = 0.65, size=1,  colour = 'black') +
+  scale_fill_brewer(palette = "BrBG", na.value = NA)+
+  xlab("Longitude")+
+  ylab("Latitude")+
+  theme_bw()+
+  theme(text = element_text(size = 15),
+        legend.position = c(0.87,0.37))
+
+zz
