@@ -1,0 +1,36 @@
+#Figure 5 - Final figure of comparison between reported and predicted damage (both with RFs trained on reported  and zero-filled timeseries)
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#Libraries
+library(tidyverse)
+library(readxl)
+library(ggplot2)
+library(ggthemes)
+
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#load data sheet
+#predicions_df is a data frame object containing four colums: "Year", "Reported" which contains the sum of all the disturbance causes reported by the countries per year, 
+#"Reported gapfilled" which contains the predictions of the RF models trained on reported disturbance only,
+#"Expert's interpretation gapfilled" which contains the predictions of the RF models trained on the expert's interpretation of the time-series( zero-filled).
+
+#load data
+read_xlsx("RFs_predictions_final_comparison.xlsx") -> predictions_df
+
+#Transfrm data in unit Million m3
+predictions_df %>% 
+  mutate(Reported = Reported/1000000) %>% 
+  mutate(`Reported gapfilled` = `Reported gapfilled`/1000000) %>% 
+  mutate(`Expert's interpretation gapfilled` =`Zerofilled gapfilled`/1000000) ->predictions_df
+
+#plot
+ggplot(predictions_df,aes(x=Year, y=Reported, fill=Reported) )+
+  geom_area( stat="identity", fill = "#669999",alpha = 0.8, color = 1,lwd = 0.5,linetype = 1)+
+  geom_line(aes(x=Year, y=`Reported gapfilled`, colour ="Reported gapfilled"), size =1 )+
+  geom_line(aes(x=Year, y=`Expert's interpretation gapfilled`, colour = "Expert's interpretation gapfilled"), size =1, linetype = "dashed")+
+  scale_colour_manual("",
+                      values = c("Reported gapfilled" ="#FF0000", "Expert's interpretation gapfilled"="#006600"))+
+  labs(y="Damage (M m3)")+
+  theme_hc()+
+  theme(text = element_text(size = 20))+
+  scale_y_continuous(breaks = seq(0, 300, 50))+
+  scale_x_continuous(breaks = seq(1950, 2020, 10))+
+  theme(legend.position = "none" )
