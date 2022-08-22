@@ -3,7 +3,7 @@ This repository contains the codes used for the analysis and producing the main 
 Significant increase in natural disturbance impacts on European forests since 1950. 
 Patacca et al., 2022.
 
-The link tot he raw data contained in the Database of Forest Disturbance in Europe (DFDE) is: https://dfde.efi.int/db/dfde_app.php
+The link to the raw data contained in the Database of Forest Disturbance in Europe (DFDE) is: https://dfde.efi.int/db/dfde_app.php
 
 The files called "Figure_#", where # is the number of the figures, contain the code used to produce the figures correspondent to the same # in the main text of the manuscript.
 
