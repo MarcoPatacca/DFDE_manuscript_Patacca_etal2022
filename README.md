@@ -9,4 +9,8 @@ The files called "Figure_#", where # is the number of the figures, contain the c
 
 The file called "RF_example" contains an example of the code used to produce, train and apply the (80) random forest algorithms used in the gap-filling procedure explained in the main text of the manuscript. 
 
-The file called "RFs_predictions_final_comparison.xlsx" contains the values used to produce the plot of Figure 5.
+The file called "disturbance_timeseries_database.xlsx" contains the country level, disturbance drivers caused damage values of:
+-The cleaned time-series we constructed by processing raw reported data from the DFDE; 
+-The time-series gap-filled based on the reported data; 
+-The time-series gap-filled based on expert-interpretation; 
+-The labelling of the expert for each time-series per disturbance driver and country.
