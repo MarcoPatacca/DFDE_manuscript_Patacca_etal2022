@@ -74,7 +74,7 @@ model_tuned <- tuneRF(
 ##fit the random forest model
 Wind_CENTRAL_PANN_4_RF.2 <- randomForest(formula = damaged_wood_volume ~ .,
                                         data = Wind_Central_Pannonic_4_RF,
-                                        mtry = 32,
+                                        mtry = 8,
                                         ntree = 500)
 
 #display fitted model
