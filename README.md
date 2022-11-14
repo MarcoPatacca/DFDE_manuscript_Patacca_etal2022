@@ -14,3 +14,5 @@ The file called "disturbance_timeseries_database.xlsx" contains for each disturb
 -The time-series gap-filled based on the reported data; 
 -The time-series gap-filled based on expert-interpretation; 
 -The labelling of the expert for each time-series per disturbance driver and country.
+
+Please cite the data as: Patacca et al., 2022, Global Change Biology xxx
