@@ -17,4 +17,4 @@ The file called "disturbance_timeseries_database.xlsx" contains for each disturb
 
 Please cite the data as: Patacca, M., Lindner, M., Lucas-Borja, M. E., Cordonnier, T., Fidej, G., Gardiner, B., Hauf, Y., Jasinevičius, G., Labonne, S., Linkevičius, E., Mahnken, M., Milanovic, S., Nabuurs, G.-J., Nagel, T. A., Nikinmaa, L., Panyatov, M., Bercak, R., Seidl, R., Ostrogović Sever, M. Z. ... Schelhaas, M.-J. (2022). Significant increase in natural disturbance impacts on European forests since 1950. Global Change Biology, 00, 1–18. https://doi.org/10.1111/gcb.16531
 
-Data DOI: 10.5281/zenodo.7319179
+Data DOI: https://zenodo.org/badge/latestdoi/520070610
